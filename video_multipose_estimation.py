@@ -4,17 +4,13 @@ import pafy
 from HRNET import HRNET, PersonDetector
 from HRNET.utils import ModelType, filter_person_detections
 
-# # Initialize video
-# cap = cv2.VideoCapture("input.avi")
-
-videoUrl = 'https://youtu.be/HI-BMpNByo0'
-videoPafy = pafy.new(videoUrl)
-print(videoPafy.streams)
-cap = cv2.VideoCapture(videoPafy.streams[-1].url)
+# Initialize video from a local file
+video_path = r"F:\Project\ONNX-HRNET-Human-Pose-Estimation\hrnet_video.gif"# Replace with the actual path to your video file
+cap = cv2.VideoCapture(video_path)
 start_time = 0  # skip first {start_time} seconds
 cap.set(cv2.CAP_PROP_POS_FRAMES, start_time * 30)
 
-# out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (1920, 720))
+out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (1920, 720))
 
 # Initialize Pose Estimation model
 model_path = "models/hrnet_coco_w48_384x288.onnx"
@@ -63,6 +59,6 @@ while cap.isOpened():
         frame = person_detector.draw_detections(frame, mask_alpha=0.15)
 
     cv2.imshow("Model Output", frame)
-    # out.write(frame)
+    out.write(frame)
 
-# out.release()
+out.release()

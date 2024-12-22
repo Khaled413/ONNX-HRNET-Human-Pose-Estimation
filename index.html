@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pose Estimation</title>
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --primary-light: #818CF8;
+            --background-color: #F3F4F6;
+            --text-color: #1F2937;
+            --error-color: #EF4444;
+            --border-color: #D1D5DB;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-color);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        .upload-container {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+        
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234F46E5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
+            transition: transform 0.3s ease;
+        }
+        
+        .upload-area:hover .upload-icon {
+            transform: scale(1.1);
+        }
+        
+        .upload-text {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-subtext {
+            font-size: 0.875rem;
+            color: #6B7280;
+        }
+        
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .result-container {
+            width: 100%;
+            margin-top: 2rem;
+        }
+        
+        .result-image {
+            width: 100%;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .result-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .error-message {
+            background-color: #FEE2E2;
+            border: 1px solid #FCA5A5;
+            color: var(--error-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.5s ease-out forwards;
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        /* Spinner styles */
+        .spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            position: relative;
+            width: 64px;
+            height: 64px;
+        }
+        
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid #E0E7FF;
+            border-radius: 50%;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .spinner-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid transparent;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .processing-text {
+            margin-top: 1rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pose Estimation</title>
+        <link rel="stylesheet" href="styles/main.css">
+        <link rel="stylesheet" href="styles/animations.css">
+        <link rel="stylesheet" href="styles/components.css">
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="title fade-in">Pose Estimation</h1>
+            
+            <div class="upload-container slide-up">
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon"></div>
+                    <p class="upload-text">Drop your image here</p>
+                    <p class="upload-subtext">or click to browse</p>
+                    <input type="file" id="file-input" accept="image/*" class="file-input">
+                </div>
+                
+                <div class="spinner-container hidden" id="spinner">
+                    <div class="spinner">
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-circle"></div>
+                    </div>
+                    <p class="processing-text">Processing image...</p>
+                </div>
+    
+                <div class="error-message hidden" id="error-message"></div>
+            </div>
+    
+            <div class="result-container" id="result-container">
+                <img id="result-image" class="result-image hidden fade-in" alt="Pose estimation result">
+            </div>
+        </div>
+    
+        <script src="js/upload-handler.js"></script>
+        <script src="js/animations.js"></script>
+        <script src="js/api.js"></script>
+        <script src="js/main.js"></script>
+    </body>
+    </html>
+
+    <script>
+        class UploadHandler {
+            constructor() {
+                this.uploadArea = document.getElementById('upload-area');
+                this.fileInput = document.getElementById('file-input');
+                this.setupEventListeners();
+            }
+        
+            setupEventListeners() {
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('upload-area-drag');
+                });
+        
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('upload-area-drag');
+                });
+        
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('upload-area-drag');
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        this.handleFile(file);
+                    }
+                });
+        
+                this.fileInput.addEventListener('change', () => {
+                    const file = this.fileInput.files[0];
+                    if (file) {
+                        this.handleFile(file);
+                    }
+                });
+            }
+        
+            handleFile(file) {
+                const event = new CustomEvent('fileSelected', { detail: { file } });
+                document.dispatchEvent(event);
+            }
+        }
+        class AnimationController {
+            static showSpinner() {
+                document.getElementById('spinner').classList.remove('hidden');
+                document.getElementById('upload-area').classList.add('hidden');
+            }
+        
+            static hideSpinner() {
+                document.getElementById('spinner').classList.add('hidden');
+                document.getElementById('upload-area').classList.remove('hidden');
+            }
+        
+            static showError(message) {
+                const errorElement = document.getElementById('error-message');
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+                errorElement.classList.add('shake');
+                
+                setTimeout(() => {
+                    errorElement.classList.remove('shake');
+                }, 500);
+            }
+        
+            static hideError() {
+                document.getElementById('error-message').classList.add('hidden');
+            }
+        
+            static showResult(imageUrl) {
+                const resultImage = document.getElementById('result-image');
+                resultImage.src = imageUrl;
+                resultImage.classList.remove('hidden');
+            }
+        
+            static hideResult() {
+                document.getElementById('result-image').classList.add('hidden');
+            }
+        }
+        class PoseEstimationAPI {
+            static async processImage(file) {
+                const formData = new FormData();
+                formData.append('image', file);
+        
+                try {
+                    const response = await fetch('http://localhost:5000/run-model', {
+                        method: 'POST',
+                        body: formData
+                    });
+        
+                    if (!response.ok) {
+                        throw new Error('Failed to process image');
+                    }
+        
+                    if (response.headers.get('content-type') === 'image/jpeg') {
+                        const blob = await response.blob();
+                        return URL.createObjectURL(blob);
+                    } else {
+                        const data = await response.json();
+                        throw new Error(data.error || 'Unknown error occurred');
+                    }
+                } catch (error) {
+                    throw error;
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            new UploadHandler();
+        
+            document.addEventListener('fileSelected', async (event) => {
+                const file = event.detail.file;
+                
+                AnimationController.hideError();
+                AnimationController.hideResult();
+                AnimationController.showSpinner();
+        
+                try {
+                    const resultImageUrl = await PoseEstimationAPI.processImage(file);
+                    AnimationController.showResult(resultImageUrl);
+                } catch (error) {
+                    AnimationController.showError(error.message);
+                } finally {
+                    AnimationController.hideSpinner();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

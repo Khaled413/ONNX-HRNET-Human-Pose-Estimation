@@ -5,7 +5,7 @@ from HRNET import HRNET, PersonDetector
 from HRNET.utils import ModelType, filter_person_detections
 
 # Initialize Pose Estimation model
-model_path = "models/hrnet_coco_w48_384x288.onnx"
+model_path = "F:\Project\ONNX-HRNET-Human-Pose-Estimation\models\hrnet_coco_w48_384x288.onnx"
 model_type = ModelType.COCO
 hrnet = HRNET(model_path, model_type, conf_thres=0.5)
 
@@ -37,3 +37,4 @@ cv2.namedWindow("Model Output", cv2.WINDOW_NORMAL)
 cv2.imshow("Model Output", img)
 cv2.imwrite("doc/img/output.jpg", img)
 cv2.waitKey(0)
+cv2.destroyAllWindows()
