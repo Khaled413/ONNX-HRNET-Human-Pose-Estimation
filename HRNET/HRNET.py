@@ -2,7 +2,7 @@ import time
 import cv2
 import numpy as np
 import onnxruntime
-
+import math
 from .utils import *
 from .yolov6.YOLOv6 import YOLOv6
 
@@ -26,8 +26,7 @@ class HRNET:
 
     def initialize_model(self, path):
         self.session = onnxruntime.InferenceSession(path,
-                                                    providers=['CUDAExecutionProvider',
-                                                               'CPUExecutionProvider'])
+                                                    providers=['CUDAExecutionProvider','CPUExecutionProvider'])
         # Get model info
         self.get_input_details()
         self.get_output_details()
@@ -115,12 +114,12 @@ class HRNET:
         # Find the maximum value in each of the heatmaps and its location
         max_vals = np.array([np.max(heatmap) for heatmap in heatmaps[0, ...]])
         peaks = np.array([np.unravel_index(heatmap.argmax(), heatmap.shape)
-                          for heatmap in heatmaps[0, ...]])
+                        for heatmap in heatmaps[0, ...]])
         peaks[max_vals < self.conf_threshold] = np.array([np.NaN, np.NaN])
 
         # Scale peaks to the image size
         peaks = peaks[:, ::-1] * np.array([self.img_width / map_w,
-                                          self.img_height / map_h])
+                                            self.img_height / map_h])
 
         return total_heatmap, peaks
 
